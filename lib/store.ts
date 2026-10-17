@@ -35,5 +35,10 @@ export const repository = {
     bookings.push(booking);
     localStorage.setItem(BOOKING_KEY, JSON.stringify(bookings));
     return true;
-  }
+  },
+  resetDemo: () => {
+    localStorage.removeItem(BUSINESS_KEY);
+    localStorage.removeItem(BOOKING_KEY);
+    localStorage.removeItem(SELLER_KEY);
+  },
 };
