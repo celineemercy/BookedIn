@@ -5,6 +5,7 @@ import { CATEGORIES, JAKARTA_AREAS } from "@/lib/live-types";
 import { LiveBusinessCard } from "@/components/LiveBusinessCard";
 
 const icons = [Scissors, Sparkles, Hand, Flower2];
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const businesses = await getPublicBusinesses();

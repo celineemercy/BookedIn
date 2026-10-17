@@ -6,6 +6,8 @@ import type { DateBlock, WeeklyHour } from "@/lib/scheduling";
 import DashboardView from "./view";
 import { serverNowMs } from "@/lib/server-time";
 
+export const dynamic = "force-dynamic";
+
 export default async function SellerDashboard({ searchParams }: { searchParams: Promise<{ shop?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/seller/dashboard");

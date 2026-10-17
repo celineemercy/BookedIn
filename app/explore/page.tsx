@@ -3,6 +3,8 @@ import { getCurrentUser, getPublicBusinesses } from "@/lib/live-data";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import ExploreView from "./view";
 
+export const dynamic = "force-dynamic";
+
 export default async function ExplorePage() {
   const [businesses, user] = await Promise.all([getPublicBusinesses(), getCurrentUser()]);
   const client = await createSupabaseServerClient();
