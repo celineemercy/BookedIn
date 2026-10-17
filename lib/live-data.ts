@@ -1,7 +1,7 @@
 import "server-only";
 import { createSupabaseServerClient } from "./supabase/server";
 import type { LiveBusiness, LiveBooking } from "./live-types";
-import { nextAvailable, type BusySlot, type DateBlock, type WeeklyHour } from "./scheduling";
+import { addJakartaDays, findSlots, jakartaDate, nextAvailable, type BusySlot, type DateBlock, type WeeklyHour } from "./scheduling";
 
 export async function getPublicBusinesses(): Promise<LiveBusiness[]> {
   const client = await createSupabaseServerClient();
@@ -23,11 +23,15 @@ export async function getPublicBusinesses(): Promise<LiveBusiness[]> {
   const busy = (busyResult.data || []) as BusySlot[];
   const reviews = (reviewsResult.data || []) as { business_id: string; rating: number }[];
   return businesses.map(business => {
-    const service = business.services?.find(item => item.active);
+    const services = business.services?.filter(item => item.active) || [];
+    const nextTimes = services.map(service => nextAvailable({ businessId: business.id, service, hours, blocks, busy, now: from })).filter((value): value is string => !!value).sort();
+    const today = jakartaDate(from);
+    const availableDays = [today, addJakartaDays(today, 1)].filter(date => services.some(service => findSlots({ businessId: business.id, service, date, hours, blocks, busy, now: from }).some(slot => slot.available)));
     const ownReviews = reviews.filter(item => item.business_id === business.id);
     return {
       ...business,
-      next_available: service ? nextAvailable({ businessId: business.id, service, hours, blocks, busy, now: from }) : null,
+      next_available: nextTimes[0] || null,
+      available_days: availableDays,
       rating: ownReviews.length ? ownReviews.reduce((sum, item) => sum + item.rating, 0) / ownReviews.length : null,
       review_count: ownReviews.length,
     };

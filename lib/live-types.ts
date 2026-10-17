@@ -7,7 +7,7 @@ export type LiveBusiness = {
   id: string; owner_id: string; slug: string; name: string; category: Category; area: string;
   address: string; description: string; lat: number; lng: number; cover_url: string | null;
   gallery_urls: string[]; status: BusinessStatus; rejection_reason: string | null;
-  services?: LiveService[]; next_available?: string | null; rating?: number | null; review_count?: number;
+  services?: LiveService[]; next_available?: string | null; available_days?: string[]; rating?: number | null; review_count?: number;
 };
 export type LiveBooking = {
   id: string; business_id: string; service_id: string; customer_id: string;
