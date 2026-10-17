@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireBusinessOwner, requireIdentity } from "@/lib/permissions";
 import { isBookingLaunchReady } from "@/lib/launch";
+import { canCustomerCancel, canMarkCompleted, canRespondToRequest } from "@/lib/booking-policy";
 
 export type ActionResponse = { ok: true; id?: string } | { ok: false; error: string };
 
@@ -33,22 +34,19 @@ export async function changeBookingStatus(input: { bookingId: string; action: "a
     if (sellerAction) await requireBusinessOwner(booking.business_id);
     else if (booking.customer_id !== user.id) return { ok: false, error: "Booking ini bukan milikmu." };
     const now = Date.now();
-    const start = new Date(booking.starts_at).getTime();
     let status: string;
     let expected: string;
     if (input.action === "accept" || input.action === "decline") {
-      if (booking.status !== "pending" || new Date(booking.expires_at).getTime() <= now) return { ok: false, error: "Permintaan ini sudah tidak berlaku." };
+      if (!canRespondToRequest(booking.status, booking.expires_at, now)) return { ok: false, error: "Permintaan ini sudah tidak berlaku." };
       status = input.action === "accept" ? "accepted" : "declined"; expected = "pending";
     } else if (input.action === "cancel_customer") {
-      if (booking.status !== "pending" && booking.status !== "accepted") return { ok: false, error: "Booking tidak dapat dibatalkan." };
-      if (start <= now) return { ok: false, error: "Jadwal sudah dimulai. Hubungi tempat usaha." };
-      if (booking.status === "accepted" && start - now < 12 * 60 * 60_000) return { ok: false, error: "Hubungi tempat usaha untuk pembatalan kurang dari 12 jam." };
+      if (!canCustomerCancel(booking.status, booking.starts_at, now)) return { ok: false, error: "Booking tidak dapat dibatalkan lewat aplikasi. Hubungi tempat usaha jika jadwal sudah dekat." };
       status = "cancelled_by_customer"; expected = booking.status;
     } else if (input.action === "cancel_seller") {
       if (booking.status !== "accepted" || !input.reason?.trim()) return { ok: false, error: "Isi alasan pembatalan." };
       status = "cancelled_by_seller"; expected = "accepted";
     } else {
-      if (booking.status !== "accepted" || new Date(booking.ends_at).getTime() > now) return { ok: false, error: "Booking belum dapat ditandai selesai." };
+      if (!canMarkCompleted(booking.status, booking.ends_at, now)) return { ok: false, error: "Booking belum dapat ditandai selesai." };
       status = "completed"; expected = "accepted";
     }
     const { data, error } = await admin.from("bookings").update({ status, cancellation_reason: input.reason?.trim() || null, updated_at: new Date().toISOString() }).eq("id", booking.id).eq("status", expected).select("id").single();

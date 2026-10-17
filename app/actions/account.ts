@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin, requireIdentity } from "@/lib/permissions";
 import type { ActionResponse } from "./booking";
+import { canReviewBooking } from "@/lib/booking-policy";
 
 export async function updateProfile(input: { displayName: string; phone?: string }): Promise<ActionResponse> {
   try {
@@ -37,7 +38,7 @@ export async function submitReview(input: { bookingId: string; rating: number; b
     const { user, admin } = await requireIdentity();
     if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5 || input.body.trim().length > 1500) return { ok: false, error: "Ulasan tidak valid." };
     const { data: booking } = await admin.from("bookings").select("business_id, customer_id, status").eq("id", input.bookingId).single();
-    if (!booking || booking.customer_id !== user.id || booking.status !== "completed") return { ok: false, error: "Ulasan hanya tersedia untuk kunjungan selesai." };
+    if (!booking || !canReviewBooking(booking.status, booking.customer_id, user.id)) return { ok: false, error: "Ulasan hanya tersedia untuk kunjungan selesai." };
     const { error } = await admin.from("reviews").insert({ booking_id: input.bookingId, business_id: booking.business_id, customer_id: user.id, rating: input.rating, body: input.body.trim() });
     if (error) return { ok: false, error: error.code === "23505" ? "Kunjungan ini sudah diulas." : error.message };
     revalidatePath("/account"); revalidatePath("/explore");

@@ -11,6 +11,7 @@ import type { LiveBooking, LiveBusiness } from "@/lib/live-types";
 import { formatJakartaDateTime } from "@/lib/scheduling";
 import { LiveBusinessCard } from "@/components/LiveBusinessCard";
 import { rupiah } from "@/lib/data";
+import { canCustomerCancel } from "@/lib/booking-policy";
 
 const statusText: Record<string, string> = {
   pending: "Menunggu konfirmasi", accepted: "Dikonfirmasi", declined: "Ditolak", expired: "Kedaluwarsa",
@@ -39,7 +40,7 @@ function BookingRow({ booking, reviewed, onMessage, nowMs }: { booking: LiveBook
   const [body, setBody] = useState("");
   const [reviewDone, setReviewDone] = useState(reviewed);
   const timeUntilStart = new Date(booking.starts_at).getTime() - nowMs;
-  const canCancel = (booking.status === "pending" && timeUntilStart > 0) || (booking.status === "accepted" && timeUntilStart >= 12 * 60 * 60_000);
+  const canCancel = canCustomerCancel(booking.status, booking.starts_at, nowMs);
   return <article className="card p-5 md:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><Link href={`/business/${booking.businesses?.slug || ""}`} className="text-lg font-extrabold hover:text-cobalt">{booking.businesses?.name || "Tempat usaha"}</Link><p className="mt-1 font-semibold">{booking.service_name}</p><p className="mt-2 text-sm text-muted">{formatJakartaDateTime(booking.starts_at)} · {rupiah(booking.price_idr)} · bayar di tempat</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-extrabold ${booking.status === "accepted" ? "bg-[#E6F6ED] text-[#17643A]" : booking.status === "pending" ? "bg-[#FFF0E8] text-[#A54D2C]" : "bg-[#EDF0F5] text-muted"}`}>{statusText[booking.status] || booking.status}</span></div>
     {booking.status === "pending" && <p className="mt-4 text-sm text-muted">Tempat usaha akan merespons dalam 24 jam atau sebelum batas waktu permintaan.</p>}
     {booking.status === "accepted" && <p className="mt-4 text-sm text-muted">Datang sesuai jadwal ke {booking.businesses?.address}.</p>}
