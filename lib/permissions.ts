@@ -18,7 +18,7 @@ export async function requireAdmin() {
 
 export async function requireBusinessOwner(businessId: string) {
   const identity = await requireIdentity();
-  const { data } = await identity.admin.from("businesses").select("id, owner_id, status").eq("id", businessId).single();
+  const { data } = await identity.admin.from("businesses").select("id, owner_id, status, gallery_urls").eq("id", businessId).single();
   if (!data || data.owner_id !== identity.user.id) throw new Error("Toko tidak ditemukan untuk akun ini.");
   return { ...identity, business: data };
 }

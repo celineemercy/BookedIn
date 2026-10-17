@@ -100,17 +100,19 @@ export async function setDateClosure(businessId: string, date: string, closed: b
   } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Tanggal gagal diubah." }; }
 }
 
-export async function uploadBusinessPhoto(businessId: string, formData: FormData): Promise<ActionResponse> {
+export async function uploadBusinessPhoto(businessId: string, formData: FormData, kind: "cover" | "gallery" = "cover"): Promise<ActionResponse> {
   try {
     const { admin, business } = await requireBusinessOwner(businessId);
     const file = formData.get("photo");
     if (!(file instanceof File) || file.size > 5 * 1024 * 1024 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) return { ok: false, error: "Pilih JPG, PNG, atau WebP maksimal 5 MB." };
+    if (kind === "gallery" && business.gallery_urls.length >= 5) return { ok: false, error: "Maksimal lima foto tambahan." };
     const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
     const path = `${businessId}/${crypto.randomUUID()}.${ext}`;
     const { error } = await admin.storage.from("business-images").upload(path, file, { contentType: file.type, upsert: false });
     if (error) throw error;
     const { data } = admin.storage.from("business-images").getPublicUrl(path);
-    const { error: saveError } = await admin.from("businesses").update({ cover_url: data.publicUrl, status: business.status === "published" ? "pending_review" : business.status, updated_at: new Date().toISOString() }).eq("id", businessId);
+    const photos = kind === "gallery" ? { gallery_urls: [...business.gallery_urls, data.publicUrl] } : { cover_url: data.publicUrl };
+    const { error: saveError } = await admin.from("businesses").update({ ...photos, status: business.status === "published" ? "pending_review" : business.status, updated_at: new Date().toISOString() }).eq("id", businessId);
     if (saveError) throw saveError;
     revalidatePath("/seller/dashboard");
     return { ok: true };
