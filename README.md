@@ -59,6 +59,7 @@ Connect this repository in Vercel. Set **Production Branch** to `main`; pushes t
 npm test
 npm run lint
 npm run build
+npm run test:ui
 ```
 
-`npm test` covers WIB date handling, 15-minute steps, full service duration, overlap, closure, and the two-hour lead. Database concurrency, RLS isolation, email delivery, and the full three-role journey require a configured Supabase test project. Manual moderated usability testing and deployed Core Web Vitals measurement remain launch tasks.
+`npm test` covers WIB date handling, 15-minute steps, full service duration, overlap, closure, expiry, cancellation, and review eligibility. `test:ui` checks 390px and 1280px layouts plus serious WCAG issues against a running local server; set `BROWSER_EXECUTABLE` if Edge is installed elsewhere. Disposable local Postgres verification can use `tests/sql_bootstrap.sql`, the ordered migrations, `tests/sql_booking_verify.sql`, then `node tests/concurrent-booking.mjs` on port 55432. Email delivery and the full three-role journey still require a configured Supabase test project. Manual moderated usability testing and deployed Core Web Vitals measurement remain launch tasks.
