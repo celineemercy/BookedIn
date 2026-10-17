@@ -18,7 +18,7 @@ export async function requestBooking(input: { businessId: string; serviceId: str
       p_business_id: input.businessId, p_service_id: input.serviceId, p_starts_at: input.startsAt,
       p_customer_name: input.customerName, p_customer_phone: input.customerPhone || null,
     });
-    if (error) return { ok: false, error: error.code === "23P01" ? "Jadwal baru saja terisi. Pilih waktu lain." : error.message };
+    if (error) return { ok: false, error: error.code === "23P01" ? "Jadwal baru saja terisi. Pilih waktu lain." : error.message.includes("Booking is not open") ? "Booking belum dibuka. Silakan coba lagi nanti." : error.message };
     revalidatePath("/account");
     revalidatePath("/seller/dashboard");
     return { ok: true, id: String(data) };
