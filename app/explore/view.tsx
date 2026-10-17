@@ -9,6 +9,7 @@ import { LiveBusinessCard } from "@/components/LiveBusinessCard";
 import { CATEGORIES, JAKARTA_AREAS, type LiveBusiness } from "@/lib/live-types";
 import { distanceKm } from "@/lib/data";
 import { addJakartaDays, jakartaDate } from "@/lib/scheduling";
+import { trackProductEvent } from "@/lib/analytics";
 
 const MapPinPicker = dynamic(() => import("@/components/MapPinPicker").then(module => module.MapPinPicker), { ssr: false });
 
@@ -33,6 +34,7 @@ export default function ExploreView({ businesses, favorites, signedIn }: { busin
   const origin = gps || areaPoint;
 
   const setParam = (key: string, value: string) => {
+    trackProductEvent(key === "q" ? "catalog_searched" : "catalog_filtered");
     const next = new URLSearchParams(params.toString());
     if (value) next.set(key, value); else next.delete(key);
     router.replace(`/explore${next.size ? `?${next.toString()}` : ""}`, { scroll: false });

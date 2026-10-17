@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { ArrowRight, Check, ImagePlus, MapPin } from "lucide-react";
 import { saveBusinessBasics, saveService, saveWeeklyHours, submitBusinessForReview, uploadBusinessPhoto } from "@/app/actions/business";
 import { CATEGORIES, JAKARTA_AREAS, type Category } from "@/lib/live-types";
 import { rupiah } from "@/lib/data";
+import { trackProductEvent } from "@/lib/analytics";
 
 const MapPinPicker = dynamic(() => import("@/components/MapPinPicker").then(module => module.MapPinPicker), { ssr: false });
 const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
 export default function SellerStartView() {
+  useEffect(() => { trackProductEvent("seller_onboarding_started"); }, []);
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [businessId, setBusinessId] = useState("");
@@ -44,7 +46,7 @@ export default function SellerStartView() {
     if (!savedHours.ok) { setError(savedHours.error); return; }
     if (photo) { const data = new FormData(); data.set("photo", photo); const uploaded = await uploadBusinessPhoto(businessId, data); if (!uploaded.ok) { setError(uploaded.error); return; } }
     const result = await submitBusinessForReview(businessId);
-    if (result.ok) router.push(`/seller/dashboard?shop=${businessId}`); else setError(result.error);
+    if (result.ok) { trackProductEvent("seller_submitted"); router.push(`/seller/dashboard?shop=${businessId}`); } else setError(result.error);
   }); };
 
   return <main className="container-page py-9 md:py-14"><p className="eyebrow">Untuk pemilik usaha</p><h1 className="mt-2 text-3xl font-extrabold md:text-4xl">Daftarkan tempatmu</h1><p className="mt-3 max-w-2xl text-muted">Lengkapi tiga langkah berikut. Toko akan muncul di katalog setelah ditinjau tim BookedIn.</p><ol className="mt-7 grid grid-cols-3 gap-2 text-xs font-bold sm:max-w-2xl sm:text-sm">{["Info usaha", "Layanan", "Jadwal & preview"].map((item, index) => <li key={item} className={`rounded-xl px-3 py-3 text-center ${step === index + 1 ? "bg-cobalt text-white" : step > index + 1 ? "bg-[#E7F6EE] text-[#17643A]" : "bg-[#E9EEFF] text-muted"}`}>{step > index + 1 ? <Check size={14} className="mr-1 inline" /> : null}{item}</li>)}</ol>

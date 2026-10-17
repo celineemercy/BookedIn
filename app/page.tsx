@@ -3,6 +3,7 @@ import { ArrowRight, CalendarCheck2, MapPin, Search, Scissors, Sparkles, Hand, F
 import { getPublicBusinesses } from "@/lib/live-data";
 import { CATEGORIES, JAKARTA_AREAS } from "@/lib/live-types";
 import { LiveBusinessCard } from "@/components/LiveBusinessCard";
+import { TrackPageEvent } from "@/components/TrackPageEvent";
 
 const icons = [Scissors, Sparkles, Hand, Flower2];
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const businesses = await getPublicBusinesses();
   const featured = [...businesses].sort((a, b) => (a.next_available || "z").localeCompare(b.next_available || "z")).slice(0, 3);
-  return <main>
+  return <main><TrackPageEvent event="home_viewed" />
     <section className="overflow-hidden bg-[#E9EEFF]"><div className="container-page grid gap-8 py-12 lg:grid-cols-[1.1fr_.9fr] lg:items-center lg:py-20">
       <div><span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-cobalt"><span className="h-2 w-2 rounded-full bg-tangerine" />Jasa pilihan di Jakarta</span>
         <h1 className="mt-7 max-w-2xl text-[clamp(2.8rem,5.8vw,5.3rem)] font-extrabold leading-[1.04] tracking-[-.055em]">Cari tempatnya.<br /><span className="text-cobalt">Pilih waktunya.</span></h1>

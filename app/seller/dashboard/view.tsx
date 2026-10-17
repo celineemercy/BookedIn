@@ -11,6 +11,7 @@ import { saveBusinessBasics, saveService, saveWeeklyHours, setDateClosure, submi
 import { CATEGORIES, JAKARTA_AREAS, type Category, type LiveBooking, type LiveBusiness, type LiveService } from "@/lib/live-types";
 import { formatJakartaDateTime, type DateBlock, type WeeklyHour } from "@/lib/scheduling";
 import { rupiah } from "@/lib/data";
+import { trackProductEvent } from "@/lib/analytics";
 
 const MapPinPicker = dynamic(() => import("@/components/MapPinPicker").then(module => module.MapPinPicker), { ssr: false });
 const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -42,7 +43,7 @@ function SellerBookingRow({ booking, onMessage, nowMs }: { booking: LiveBooking;
   const act = (action: "accept" | "decline" | "cancel_seller" | "complete") => {
     const reason = action === "cancel_seller" ? window.prompt("Alasan pembatalan untuk pelanggan:") || "" : "";
     if (action === "cancel_seller" && !reason) return;
-    startTransition(async () => { const result = await changeBookingStatus({ bookingId: booking.id, action, reason }); onMessage(result.ok ? "Status booking diperbarui." : result.error); if (result.ok) router.refresh(); });
+    startTransition(async () => { const result = await changeBookingStatus({ bookingId: booking.id, action, reason }); onMessage(result.ok ? "Status booking diperbarui." : result.error); if (result.ok) { trackProductEvent("seller_responded"); router.refresh(); } });
   };
   return <article className="card flex flex-wrap items-start justify-between gap-4 p-5"><div><span className={`rounded-full px-2.5 py-1 text-xs font-extrabold ${booking.status === "pending" ? "bg-[#FFF0E8] text-[#A54D2C]" : "bg-[#E9EEFF] text-cobalt"}`}>{labels[booking.status] || booking.status}</span><h3 className="mt-3 font-extrabold">{booking.customer_name} · {booking.service_name}</h3><p className="mt-1 text-sm text-muted">{formatJakartaDateTime(booking.starts_at)} · {rupiah(booking.price_idr)}</p><p className="mt-1 text-sm text-muted">{booking.customer_email}{booking.customer_phone ? ` · ${booking.customer_phone}` : ""}</p>{booking.status === "pending" && <p className="mt-2 text-xs text-tangerine">Batas respons: {formatJakartaDateTime(booking.expires_at)}</p>}</div><div className="flex flex-wrap gap-2">{booking.status === "pending" && <><button disabled={pending} onClick={() => act("accept")} className="btn-primary !min-h-10 !px-4 text-sm"><Check size={16} /> Terima</button><button disabled={pending} onClick={() => act("decline")} className="btn-outline !min-h-10 !px-4 text-sm">Tolak</button></>}{booking.status === "accepted" && <><button disabled={pending || new Date(booking.ends_at).getTime() > nowMs} onClick={() => act("complete")} className="btn-primary !min-h-10 !px-4 text-sm">Selesai</button><button disabled={pending} onClick={() => act("cancel_seller")} className="btn-outline !min-h-10 !px-4 text-sm">Batalkan</button></>}</div></article>;
 }

@@ -7,6 +7,7 @@ import { formatJakartaDateTime } from "@/lib/scheduling";
 import { rupiah } from "@/lib/data";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ReportReviewButton } from "@/components/ReportReviewButton";
+import { TrackPageEvent } from "@/components/TrackPageEvent";
 
 export default async function BusinessDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -20,7 +21,7 @@ export default async function BusinessDetail({ params }: { params: Promise<{ slu
   const reviews = reviewsResult?.data || [];
   const services = (business.services || []).filter(item => item.active).sort((a, b) => a.price_idr - b.price_idr);
   const first = services[0];
-  return <main className="pb-20"><div className="container-page py-6"><Link href="/explore" className="inline-flex items-center gap-2 text-sm font-bold text-cobalt"><ArrowLeft size={16} /> Kembali ke katalog</Link>
+  return <main className="pb-20"><TrackPageEvent event="business_viewed" /><div className="container-page py-6"><Link href="/explore" className="inline-flex items-center gap-2 text-sm font-bold text-cobalt"><ArrowLeft size={16} /> Kembali ke katalog</Link>
     <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_.8fr]"><div><span className="rounded-full bg-[#E9EEFF] px-3 py-1.5 text-xs font-extrabold text-cobalt">{business.category} · Terverifikasi</span><h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">{business.name}</h1><p className="mt-4 flex items-start gap-2 text-sm text-muted"><MapPin size={17} className="mt-0.5 shrink-0 text-cobalt" />{business.address}</p>
       <p className="mt-5 max-w-2xl leading-7 text-muted">{business.description}</p><div className="mt-6 flex flex-wrap items-center gap-3">{first && <Link href={`/booking/${business.slug}?service=${first.id}`} className="btn-primary">Lihat jadwal <ArrowRight size={18} /></Link>}<FavoriteButton businessId={business.id} initial={!!favoriteResult?.data} signedIn={!!user} /></div>
       <div className="mt-6 grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-[#F2F5FF] p-4"><small className="text-muted">Mulai dari</small><strong className="mt-1 block text-lg text-cobalt">{first ? rupiah(first.price_idr) : "—"}</strong></div><div className="rounded-2xl bg-[#F2F5FF] p-4"><small className="text-muted">Jadwal berikutnya</small><strong className="mt-1 block text-sm">{business.next_available ? formatJakartaDateTime(business.next_available) : "Belum tersedia"}</strong></div><div className="rounded-2xl bg-[#F2F5FF] p-4"><small className="text-muted">Ulasan terverifikasi</small><strong className="mt-1 block text-lg">{business.rating ? `${business.rating.toFixed(1)} / 5 (${business.review_count})` : "Baru di BookedIn"}</strong></div></div></div>
