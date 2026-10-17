@@ -1,44 +1,25 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/live-data";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { LiveBooking, LiveBusiness, LiveService } from "@/lib/live-types";
+import type { DateBlock, WeeklyHour } from "@/lib/scheduling";
+import DashboardView from "./view";
+import { serverNowMs } from "@/lib/server-time";
 
-import Link from "next/link";
-import { useState } from "react";
-import { ArrowRight, CalendarDays, Check, Clock3, ExternalLink, Plus, Store, Trash2, Users } from "lucide-react";
-import { useApp } from "@/components/AppProvider";
-import { areas, categories } from "@/lib/data";
-import { Business, Category, Service } from "@/lib/types";
-
-export default function SellerDashboard() {
-  const { ready } = useApp();
-  if (!ready) return <main className="container-page min-h-[70vh] py-20">Memuat dashboard...</main>;
-  return <DashboardBody />;
+export default async function SellerDashboard({ searchParams }: { searchParams: Promise<{ shop?: string }> }) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?next=/seller/dashboard");
+  const client = await createSupabaseServerClient();
+  const { data: shops } = await client!.from("businesses").select("*").eq("owner_id", user.id).order("created_at", { ascending: false });
+  const businesses = (shops || []) as LiveBusiness[];
+  const { shop } = await searchParams;
+  const selected = businesses.find(item => item.id === shop) || businesses[0];
+  if (!selected) return <main className="container-page min-h-[65vh] py-16"><p className="eyebrow">Dashboard usaha</p><h1 className="mt-2 text-3xl font-extrabold">Belum ada toko</h1><p className="mt-3 text-muted">Daftarkan tempat pertamamu untuk mulai menerima permintaan booking.</p><a href="/seller/start" className="btn-primary mt-6">Daftarkan usaha</a></main>;
+  const [services, hours, blocks, bookings] = await Promise.all([
+    client!.from("services").select("*").eq("business_id", selected.id).order("created_at"),
+    client!.from("weekly_hours").select("*").eq("business_id", selected.id),
+    client!.from("date_blocks").select("*").eq("business_id", selected.id).gte("blocked_date", new Date().toISOString().slice(0, 10)),
+    client!.from("bookings").select("*").eq("business_id", selected.id).order("starts_at", { ascending: true }),
+  ]);
+  return <DashboardView shops={businesses} business={selected} services={(services.data || []) as LiveService[]} hours={(hours.data || []) as WeeklyHour[]} blocks={(blocks.data || []) as DateBlock[]} bookings={(bookings.data || []) as LiveBooking[]} nowMs={await serverNowMs()} />;
 }
-
-function DashboardBody() {
-  const { businesses, bookings, sellerId, saveBusiness } = useApp();
-  const business = businesses.find(item => item.id === sellerId) || businesses.find(item => item.id === "b1")!;
-  const [draft, setDraft] = useState<Business>(business);
-  const [tab, setTab] = useState<"overview" | "profile" | "services" | "schedule" | "bookings">("overview");
-  const [saved, setSaved] = useState(false);
-  const ownBookings = bookings.filter(item => item.businessId === business.id).sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
-  const update = (changes: Partial<Business>) => { setDraft(current => ({ ...current, ...changes })); setSaved(false); };
-  const save = () => { saveBusiness(draft); setSaved(true); window.setTimeout(() => setSaved(false), 3000); };
-  const serviceName = (id: string) => business.services.find(item => item.id === id)?.name || "Layanan";
-  const tabs = [{ id: "overview", label: "Ringkasan" }, { id: "profile", label: "Profil toko" }, { id: "services", label: "Layanan" }, { id: "schedule", label: "Jam buka" }, { id: "bookings", label: "Booking" }] as const;
-
-  return <main className="min-h-[70vh]"><section className="bg-[#EFF1E9] py-10 md:py-14"><div className="container-page flex flex-wrap items-end justify-between gap-6"><div><p className="eyebrow">DASHBOARD SELLER</p><h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">Halo, {business.name} 👋</h1><p className="mt-3 text-muted">Kelola etalase dan pantau booking dari satu tempat.</p>{!sellerId && <p className="mt-2 text-xs font-semibold text-coral">Sedang melihat toko demo. Buat tokomu untuk memakai profil sendiri.</p>}</div><Link href={`/business/${business.slug}`} className="btn-outline bg-white">Lihat toko <ExternalLink size={16} /></Link></div></section>
-    <div className="container-page grid gap-7 py-10 lg:grid-cols-[230px_1fr]"><aside className="h-fit rounded-[24px] border border-[#e7e8e1] bg-white p-3"><div className="mb-3 flex items-center gap-3 rounded-2xl bg-[#F3F5F0] p-3"><img src={business.image} alt="" className="h-12 w-12 rounded-xl object-cover" /><div className="min-w-0"><p className="truncate text-sm font-bold">{business.name}</p><p className="text-xs text-muted">{business.category}</p></div></div><nav className="space-y-1">{tabs.map(item => <button key={item.id} onClick={() => setTab(item.id)} className={`w-full rounded-xl px-4 py-3 text-left text-sm font-semibold transition ${tab === item.id ? "bg-forest text-white" : "text-muted hover:bg-[#f3f5ef] hover:text-ink"}`}>{item.label}</button>)}</nav><Link href="/seller/start" className="mt-4 flex items-center gap-2 border-t border-[#eef0e9] px-4 pt-5 text-sm font-semibold text-coral"><Plus size={16} /> Buka toko baru</Link></aside>
-      <div className="min-w-0">{tab === "overview" && <div><div className="grid gap-4 sm:grid-cols-3"><Stat icon={Store} label="Toko aktif" value="1" /><Stat icon={CalendarDays} label="Total booking" value={String(ownBookings.length)} /><Stat icon={Users} label="Layanan tersedia" value={String(business.services.length)} /></div><div className="mt-7 grid gap-7 xl:grid-cols-[1fr_280px]"><div className="card p-6 md:p-8"><div className="flex items-center justify-between"><h2 className="text-xl font-bold">Booking terbaru</h2><button onClick={() => setTab("bookings")} className="text-sm font-semibold text-forest">Lihat semua <ArrowRight size={15} className="inline" /></button></div>{ownBookings.length ? <div className="mt-5 divide-y divide-[#edf0e9]">{ownBookings.slice(0, 4).map(item => <div key={item.id} className="flex flex-wrap justify-between gap-3 py-4 text-sm"><div><strong>{item.customerName}</strong><p className="mt-1 text-muted">{serviceName(item.serviceId)}</p></div><span className="font-semibold">{item.date} · {item.time}</span></div>)}</div> : <EmptyBookings />}</div><div className="rounded-[28px] bg-peach p-7"><p className="eyebrow">TIPS UNTUKMU</p><h3 className="mt-3 text-xl font-bold">Etalase yang menarik dimulai dari detail.</h3><p className="mt-3 text-sm leading-7 text-muted">Pastikan layanan, harga, dan jam buka selalu sesuai agar pelanggan mudah memilih.</p><button onClick={() => setTab("profile")} className="mt-6 font-semibold text-forest">Lengkapi profil <ArrowRight size={16} className="inline" /></button></div></div></div>}
-        {tab === "profile" && <div className="card p-6 md:p-8"><SectionTitle title="Profil toko" subtitle="Informasi ini tampil di halaman toko dan katalog." /><div className="mt-7 grid gap-5 sm:grid-cols-2"><div className="sm:col-span-2"><label className="label">Nama usaha</label><input className="field" value={draft.name} onChange={event => update({ name: event.target.value })} /></div><div><label className="label">Kategori</label><select className="field" value={draft.category} onChange={event => update({ category: event.target.value as Category })}>{categories.map(item => <option key={item}>{item}</option>)}</select></div><div><label className="label">Area</label><select className="field" value={draft.area} onChange={event => { const area = areas.find(item => item.name === event.target.value)!; update({ area: area.name, lat: area.lat, lng: area.lng }); }}>{areas.map(item => <option key={item.name}>{item.name}</option>)}</select></div><div className="sm:col-span-2"><label className="label">Alamat lengkap</label><input className="field" value={draft.address} onChange={event => update({ address: event.target.value })} /></div><div className="sm:col-span-2"><label className="label">Deskripsi</label><textarea className="field min-h-28" value={draft.description} onChange={event => update({ description: event.target.value })} /></div></div><SaveButton saved={saved} onClick={save} /></div>}
-        {tab === "services" && <div className="card p-6 md:p-8"><SectionTitle title="Layanan & harga" subtitle="Atur pilihan yang akan dilihat pelanggan." /><div className="mt-7 space-y-4">{draft.services.map((service, index) => <div key={service.id} className="rounded-2xl border border-[#e7e9e1] p-4"><div className="mb-4 flex items-center justify-between"><strong>Layanan {index + 1}</strong><button onClick={() => update({ services: draft.services.filter(item => item.id !== service.id) })} disabled={draft.services.length === 1} aria-label={`Hapus ${service.name}`} className="text-muted hover:text-coral disabled:opacity-30"><Trash2 size={18} /></button></div><div className="grid gap-3 sm:grid-cols-[1fr_130px_130px]"><input aria-label="Nama layanan" className="field" value={service.name} onChange={event => updateService(service.id, { name: event.target.value })} placeholder="Nama layanan" /><input aria-label="Harga layanan" type="number" min="1000" className="field" value={service.price} onChange={event => updateService(service.id, { price: Number(event.target.value) })} /><input aria-label="Durasi menit" type="number" min="15" step="15" className="field" value={service.duration} onChange={event => updateService(service.id, { duration: Number(event.target.value) })} /></div><div className="mt-2 text-xs text-muted">Nama · Harga (Rp) · Durasi (menit)</div></div>)}</div><button onClick={() => update({ services: [...draft.services, { id: crypto.randomUUID(), name: "Layanan baru", price: 100000, duration: 60 }] })} className="btn-outline mt-5"><Plus size={17} /> Tambah layanan</button><SaveButton saved={saved} onClick={save} /></div>}
-        {tab === "schedule" && <div className="card p-6 md:p-8"><SectionTitle title="Jam buka" subtitle="Slot booking tersedia setiap satu jam di antara jam buka dan tutup, setiap hari." /><div className="mt-7 grid gap-5 sm:grid-cols-2"><div><label className="label">Buka</label><select className="field" value={draft.openingTime} onChange={event => update({ openingTime: event.target.value })}>{hours.map(item => <option key={item}>{item}</option>)}</select></div><div><label className="label">Tutup</label><select className="field" value={draft.closingTime} onChange={event => update({ closingTime: event.target.value })}>{hours.map(item => <option key={item}>{item}</option>)}</select></div></div><p className="mt-5 flex items-center gap-2 text-sm text-muted"><Clock3 size={17} /> Jam saat ini: {business.openingTime}–{business.closingTime} WIB</p>{draft.openingTime >= draft.closingTime && <p className="mt-3 text-sm font-semibold text-coral">Jam tutup harus setelah jam buka.</p>}<SaveButton saved={saved} onClick={save} disabled={draft.openingTime >= draft.closingTime} /></div>}
-        {tab === "bookings" && <div className="card p-6 md:p-8"><SectionTitle title="Booking masuk" subtitle="Booking dari pelanggan di browser ini akan muncul di sini." />{ownBookings.length ? <div className="mt-6 divide-y divide-[#e9ece5]">{ownBookings.map(item => <div key={item.id} className="grid gap-3 py-5 text-sm sm:grid-cols-[1fr_1fr_auto]"><div><strong className="block text-base">{item.customerName}</strong><span className="text-muted">{item.customerPhone}</span></div><div><strong>{serviceName(item.serviceId)}</strong><p className="mt-1 text-muted">{item.date} · {item.time} WIB</p></div><span className="h-fit rounded-full bg-[#E7F1E8] px-3 py-1.5 text-xs font-bold text-forest">Terkonfirmasi</span></div>)}</div> : <EmptyBookings />}</div>}
-      </div></div></main>;
-
-  function updateService(id: string, changes: Partial<Service>) { update({ services: draft.services.map(item => item.id === id ? { ...item, ...changes } : item) }); }
-}
-
-const hours = Array.from({ length: 15 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
-function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) { return <div><h2 className="text-2xl font-bold">{title}</h2><p className="mt-2 text-sm text-muted">{subtitle}</p></div>; }
-function SaveButton({ onClick, saved, disabled }: { onClick: () => void; saved: boolean; disabled?: boolean }) { return <button type="button" onClick={onClick} disabled={disabled} className="btn-primary mt-7">{saved ? <><Check size={18} /> Tersimpan</> : "Simpan perubahan"}</button>; }
-function EmptyBookings() { return <div className="py-12 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-peach text-coral"><CalendarDays /></div><p className="mt-4 font-bold">Belum ada booking</p><p className="mt-2 text-sm text-muted">Coba booking tokomu dari halaman client untuk melihat simulasi di sini.</p></div>; }
-function Stat({ icon: Icon, label, value }: { icon: typeof Store; label: string; value: string }) { return <div className="card p-5"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-peach text-coral"><Icon size={20} /></div><p className="mt-5 text-sm text-muted">{label}</p><strong className="mt-1 block text-3xl">{value}</strong></div>; }
