@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowRight, CalendarDays, Heart, LogOut, Star } from "lucide-react";
 import { changeBookingStatus } from "@/app/actions/booking";
@@ -32,16 +33,18 @@ export default function AccountView({ email, profile, bookings, favorites, revie
 }
 
 function BookingRow({ booking, reviewed, onMessage, nowMs }: { booking: LiveBooking; reviewed: boolean; onMessage: (value: string) => void; nowMs: number }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState("");
   const [reviewDone, setReviewDone] = useState(reviewed);
-  const canCancel = booking.status === "pending" || (booking.status === "accepted" && new Date(booking.starts_at).getTime() - nowMs >= 12 * 60 * 60_000);
+  const timeUntilStart = new Date(booking.starts_at).getTime() - nowMs;
+  const canCancel = (booking.status === "pending" && timeUntilStart > 0) || (booking.status === "accepted" && timeUntilStart >= 12 * 60 * 60_000);
   return <article className="card p-5 md:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><Link href={`/business/${booking.businesses?.slug || ""}`} className="text-lg font-extrabold hover:text-cobalt">{booking.businesses?.name || "Tempat usaha"}</Link><p className="mt-1 font-semibold">{booking.service_name}</p><p className="mt-2 text-sm text-muted">{formatJakartaDateTime(booking.starts_at)} · {rupiah(booking.price_idr)} · bayar di tempat</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-extrabold ${booking.status === "accepted" ? "bg-[#E6F6ED] text-[#17643A]" : booking.status === "pending" ? "bg-[#FFF0E8] text-[#A54D2C]" : "bg-[#EDF0F5] text-muted"}`}>{statusText[booking.status] || booking.status}</span></div>
     {booking.status === "pending" && <p className="mt-4 text-sm text-muted">Tempat usaha akan merespons dalam 24 jam atau sebelum batas waktu permintaan.</p>}
     {booking.status === "accepted" && <p className="mt-4 text-sm text-muted">Datang sesuai jadwal ke {booking.businesses?.address}.</p>}
-    {canCancel && <button disabled={pending} type="button" onClick={() => { if (!window.confirm("Batalkan permintaan booking ini?")) return; startTransition(async () => { const result = await changeBookingStatus({ bookingId: booking.id, action: "cancel_customer" }); onMessage(result.ok ? "Booking dibatalkan. Muat ulang untuk melihat status terbaru." : result.error); }); }} className="mt-4 text-sm font-bold text-tangerine underline">Batalkan booking</button>}
-    {booking.status === "accepted" && !canCancel && <p className="mt-4 text-sm font-bold text-tangerine">Kurang dari 12 jam menuju jadwal. Hubungi tempat usaha di {booking.businesses?.contact_phone || "nomor pada profil toko"} untuk perubahan.</p>}
+    {canCancel && <button disabled={pending} type="button" onClick={() => { if (!window.confirm("Batalkan permintaan booking ini?")) return; startTransition(async () => { const result = await changeBookingStatus({ bookingId: booking.id, action: "cancel_customer" }); onMessage(result.ok ? "Booking dibatalkan." : result.error); if (result.ok) router.refresh(); }); }} className="mt-4 text-sm font-bold text-tangerine underline">Batalkan booking</button>}
+    {booking.status === "accepted" && !canCancel && <p className="mt-4 text-sm font-bold text-tangerine">{timeUntilStart > 0 ? "Kurang dari 12 jam menuju jadwal." : "Jadwal telah dimulai."} Hubungi tempat usaha di {booking.businesses?.contact_phone || "nomor pada profil toko"} untuk perubahan.</p>}
     {booking.status === "completed" && !reviewDone && <form onSubmit={event => { event.preventDefault(); startTransition(async () => { const result = await submitReview({ bookingId: booking.id, rating, body }); if (result.ok) setReviewDone(true); onMessage(result.ok ? "Terima kasih, ulasanmu sudah tampil." : result.error); }); }} className="mt-5 border-t border-[#E2E8F2] pt-5"><h3 className="flex items-center gap-2 font-extrabold"><Star size={17} /> Beri ulasan terverifikasi</h3><div className="mt-3 flex flex-wrap gap-3"><label className="text-sm font-bold">Nilai <select value={rating} onChange={event => setRating(Number(event.target.value))} className="ml-2 rounded-xl border px-3 py-2">{[5,4,3,2,1].map(item => <option key={item} value={item}>{item} / 5</option>)}</select></label><input value={body} onChange={event => setBody(event.target.value)} placeholder="Ceritakan pengalamanmu (opsional)" className="field flex-1" /></div><button disabled={pending} className="btn-primary mt-3 text-sm" type="submit">Kirim ulasan</button></form>}
   </article>;
 }
