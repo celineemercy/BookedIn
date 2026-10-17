@@ -9,10 +9,16 @@
     "lint": "eslint app components lib next.config.ts tailwind.config.ts"
   },
   "dependencies": {
+    "@mapbox/search-js-react": "^1.6.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^0.468.0",
+    "mapbox-gl": "^3.33.0",
     "next": "^16.4.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "resend": "^6.34.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
