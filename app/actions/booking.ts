@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireBusinessOwner, requireIdentity } from "@/lib/permissions";
+import { isBookingLaunchReady } from "@/lib/launch";
 
 export type ActionResponse = { ok: true; id?: string } | { ok: false; error: string };
 
 export async function requestBooking(input: { businessId: string; serviceId: string; startsAt: string; customerName: string; customerPhone?: string }): Promise<ActionResponse> {
   try {
+    if (!isBookingLaunchReady()) return { ok: false, error: "Booking belum dibuka. Silakan coba lagi nanti." };
     await requireIdentity();
     const client = await createSupabaseServerClient();
     if (!client) return { ok: false, error: "Booking belum tersedia." };
