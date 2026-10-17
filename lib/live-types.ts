@@ -5,7 +5,7 @@ export type BookingStatus = "pending" | "accepted" | "declined" | "expired" | "c
 export type LiveService = { id: string; business_id: string; name: string; duration_minutes: number; price_idr: number; active: boolean };
 export type LiveBusiness = {
   id: string; owner_id: string; slug: string; name: string; category: Category; area: string;
-  address: string; description: string; lat: number; lng: number; cover_url: string | null;
+  address: string; contact_phone: string; description: string; lat: number; lng: number; cover_url: string | null;
   gallery_urls: string[]; status: BusinessStatus; rejection_reason: string | null;
   services?: LiveService[]; next_available?: string | null; available_days?: string[]; rating?: number | null; review_count?: number;
 };
@@ -15,7 +15,7 @@ export type LiveBooking = {
   service_name: string; duration_minutes: number; price_idr: number;
   starts_at: string; ends_at: string; expires_at: string; status: BookingStatus;
   cancellation_reason: string | null; created_at: string;
-  businesses?: { name: string; slug: string; address: string; owner_id?: string } | null;
+  businesses?: { name: string; slug: string; address: string; contact_phone: string; owner_id?: string } | null;
 };
 
 export const CATEGORIES: Category[] = ["Salon", "Barbershop", "Nail Studio", "Spa"];

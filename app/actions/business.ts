@@ -10,6 +10,7 @@ const basicsSchema = z.object({
   businessId: z.string().uuid().optional(), name: z.string().trim().min(3).max(70),
   category: z.enum([CATEGORIES[0], CATEGORIES[1], CATEGORIES[2], CATEGORIES[3]]), area: z.string().trim().min(3).max(80),
   address: z.string().trim().min(8).max(250), description: z.string().trim().min(20).max(1000),
+  contactPhone: z.string().trim().regex(/^[+\d\s()-]{8,25}$/),
   lat: z.number().min(-6.5).max(-5.9), lng: z.number().min(106.5).max(107.2),
 });
 
@@ -22,7 +23,7 @@ export async function saveBusinessBasics(input: z.infer<typeof basicsSchema>): P
       const status = business.status === "published" ? "pending_review" : business.status;
       const { error } = await admin.from("businesses").update({
         name: value.name, category: value.category, area: value.area, address: value.address,
-        description: value.description, lat: value.lat, lng: value.lng, status,
+        description: value.description, contact_phone: value.contactPhone, lat: value.lat, lng: value.lng, status,
         rejection_reason: null, updated_at: new Date().toISOString(),
       }).eq("id", value.businessId);
       if (error) throw error;
@@ -33,7 +34,7 @@ export async function saveBusinessBasics(input: z.infer<typeof basicsSchema>): P
     const slug = `${value.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${suffix}`;
     const { data, error } = await admin.from("businesses").insert({
       owner_id: user.id, slug, name: value.name, category: value.category, area: value.area,
-      address: value.address, description: value.description, lat: value.lat, lng: value.lng,
+      address: value.address, description: value.description, contact_phone: value.contactPhone, lat: value.lat, lng: value.lng,
     }).select("id").single();
     if (error || !data) throw error || new Error("Toko gagal dibuat.");
     const hours = Array.from({ length: 7 }, (_, day) => ({ business_id: data.id, day_of_week: day, opens_at: day === 0 ? null : "09:00", closes_at: day === 0 ? null : "18:00" }));

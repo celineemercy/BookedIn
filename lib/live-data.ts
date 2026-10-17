@@ -66,6 +66,6 @@ export async function getMyBookings(): Promise<LiveBooking[]> {
   const client = await createSupabaseServerClient();
   const user = await getCurrentUser();
   if (!client || !user) return [];
-  const { data } = await client.from("bookings").select("*, businesses(name, slug, address)").eq("customer_id", user.id).order("starts_at", { ascending: false });
+  const { data } = await client.from("bookings").select("*, businesses(name, slug, address, contact_phone)").eq("customer_id", user.id).order("starts_at", { ascending: false });
   return (data || []) as LiveBooking[];
 }
