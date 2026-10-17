@@ -1,0 +1,22 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Check, ShieldCheck, X } from "lucide-react";
+import { moderateBusiness } from "@/app/actions/business";
+import { moderateReview } from "@/app/actions/account";
+import type { LiveBusiness, LiveService } from "@/lib/live-types";
+import { rupiah } from "@/lib/data";
+
+export default function AdminView({ businesses, reviews }: { businesses: (LiveBusiness & { services: LiveService[] })[]; reviews: { id: string; rating: number; body: string; report_reason: string | null; businesses: { name: string } | null }[] }) {
+  const router = useRouter(); const [pending, startTransition] = useTransition(); const [message, setMessage] = useState("");
+  const decide = (id: string, decision: "approve" | "reject") => {
+    const reason = decision === "reject" ? window.prompt("Alasan penolakan untuk pemilik usaha:") || "" : "";
+    if (decision === "reject" && !reason) return;
+    startTransition(async () => { const result = await moderateBusiness(id, decision, reason); setMessage(result.ok ? "Pengajuan berhasil ditinjau." : result.error); if (result.ok) router.refresh(); });
+  };
+  return <main className="container-page min-h-[70vh] py-9 md:py-14"><div className="flex items-center gap-3"><ShieldCheck size={30} className="text-cobalt" /><div><p className="eyebrow">Ruang operator</p><h1 className="text-3xl font-extrabold">Peninjauan BookedIn</h1></div></div><p className="mt-4 text-muted">Tinjau identitas dan foto usaha sebelum menerbitkan toko. Pengajuan yang disetujui langsung masuk katalog live.</p>{message && <p role="status" className="mt-5 rounded-xl bg-[#E9EEFF] p-4 text-sm font-bold text-cobalt">{message}</p>}
+    <section className="mt-9"><h2 className="text-xl font-extrabold">Pengajuan toko ({businesses.length})</h2>{businesses.length ? <div className="mt-4 grid gap-4 lg:grid-cols-2">{businesses.map(item => <article key={item.id} className="card p-6"><span className="text-xs font-extrabold uppercase tracking-wider text-cobalt">{item.category} · {item.area}</span><h3 className="mt-2 text-xl font-extrabold">{item.name}</h3><p className="mt-2 text-sm text-muted">{item.address} · {item.contact_phone}</p><p className="mt-3 text-sm leading-6">{item.description}</p>{item.cover_url && <a href={item.cover_url} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-bold text-cobalt underline">Lihat foto usaha</a>}<div className="mt-4 rounded-xl bg-[#F2F5FF] p-4 text-sm">{item.services?.map(service => <p key={service.id}>{service.name} · {service.duration_minutes} menit · {rupiah(service.price_idr)}</p>)}</div><p className="mt-3 text-xs text-muted">Pin: {item.lat.toFixed(5)}, {item.lng.toFixed(5)}</p><div className="mt-5 flex gap-2"><button disabled={pending} onClick={() => decide(item.id, "approve")} className="btn-primary !min-h-10 text-sm"><Check size={16} /> Setujui</button><button disabled={pending} onClick={() => decide(item.id, "reject")} className="btn-outline !min-h-10 text-sm"><X size={16} /> Tolak</button></div></article>)}</div> : <p className="card mt-4 p-6 text-muted">Tidak ada toko yang menunggu peninjauan.</p>}</section>
+    <section className="mt-12"><h2 className="text-xl font-extrabold">Ulasan dilaporkan ({reviews.length})</h2>{reviews.length ? <div className="mt-4 space-y-3">{reviews.map(item => <article key={item.id} className="card flex flex-wrap items-start justify-between gap-4 p-5"><div><strong>{item.businesses?.name} · {item.rating}/5</strong><p className="mt-2 text-sm">{item.body || "Tanpa komentar"}</p><p className="mt-2 text-xs text-tangerine">Laporan: {item.report_reason}</p></div><div className="flex gap-2"><button disabled={pending} onClick={() => startTransition(async () => { const result = await moderateReview(item.id, true); setMessage(result.ok ? "Ulasan disembunyikan." : result.error); if (result.ok) router.refresh(); })} className="btn-primary !min-h-10 text-sm">Sembunyikan</button><button disabled={pending} onClick={() => startTransition(async () => { const result = await moderateReview(item.id, false); setMessage(result.ok ? "Laporan ditutup." : result.error); if (result.ok) router.refresh(); })} className="btn-outline !min-h-10 text-sm">Tutup laporan</button></div></article>)}</div> : <p className="card mt-4 p-6 text-muted">Tidak ada ulasan yang dilaporkan.</p>}</section>
+  </main>;
+}
