@@ -6,12 +6,13 @@ export default {
     extend: {
       colors: {
         ink: "#18243A",
-        muted: "#62708A",
+        muted: "#56647D",
         cream: "#FFF9F3",
         paper: "#FFF9F3",
         peach: "#FFF0E8",
         coral: "#F36B45",
         tangerine: "#F36B45",
+        accentText: "#B44426",
         forest: "#2752D8",
         cobalt: "#2752D8"
       },
