@@ -12,5 +12,5 @@ export function FavoriteButton({ businessId, initial, signedIn }: { businessId: 
   return <button type="button" disabled={pending} aria-label={saved ? "Hapus dari tempat tersimpan" : "Simpan tempat"} aria-pressed={saved} onClick={() => {
     if (!signedIn) { router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`); return; }
     startTransition(async () => { const result = await toggleFavorite(businessId); if (result.ok) setSaved(!saved); });
-  }} className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-cobalt shadow-sm hover:bg-[#EDF2FF] disabled:opacity-50"><Heart size={18} fill={saved ? "currentColor" : "none"} /></button>;
+  }} className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-accentText shadow-sm hover:bg-[#FFE8D9] disabled:opacity-50"><Heart size={18} fill={saved ? "currentColor" : "none"} /></button>;
 }
