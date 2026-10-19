@@ -7,7 +7,7 @@ import { useState } from "react";
 
 export function Logo() {
   return <Link href="/" aria-label="BookedIn, kembali ke beranda" className="inline-flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-ink">
-    <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-tangerine text-white shadow-[4px_4px_0_#2752D8]"><CalendarCheck2 size={22} strokeWidth={2.5} /></span>
+    <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-tangerine text-white"><CalendarCheck2 size={22} strokeWidth={2.5} /></span>
     <span>Booked<span className="text-cobalt">In</span></span>
   </Link>;
 }
