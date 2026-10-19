@@ -5,15 +5,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#24312D",
-        muted: "#69756F",
-        cream: "#F9F8F4",
-        peach: "#FBE9DF",
-        coral: "#E7795E",
-        forest: "#294A3B"
+        ink: "#2B211D",
+        muted: "#66564E",
+        cream: "#FFF9F3",
+        paper: "#FFF9F3",
+        peach: "#FFF0E8",
+        coral: "#F36B45",
+        tangerine: "#F36B45",
+        accentText: "#B44426"
       },
-      fontFamily: { sans: ["Arial", "Helvetica", "sans-serif"] },
-      boxShadow: { soft: "0 16px 50px rgba(42, 62, 53, .08)" }
+      fontFamily: { sans: ["Plus Jakarta Sans", "Arial", "sans-serif"] },
+      boxShadow: { soft: "0 18px 48px rgba(59, 36, 25, .10)" }
     }
   },
   plugins: []

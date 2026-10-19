@@ -13,6 +13,7 @@ type AppState = {
   saveBusiness: (business: Business) => void;
   addBooking: (booking: Booking) => boolean;
   setSellerId: (id: string) => void;
+  resetDemo: () => void;
 };
 
 const Context = createContext<AppState | null>(null);
@@ -42,8 +43,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return success;
   };
   const setSellerId = (id: string) => { repository.setSellerId(id); setSeller(id); };
+  const resetDemo = () => { repository.resetDemo(); setBusinesses(seedBusinesses); setBookings([]); setSeller(null); };
 
-  return <Context.Provider value={{ businesses, bookings, sellerId, ready, saveBusiness, addBooking, setSellerId }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ businesses, bookings, sellerId, ready, saveBusiness, addBooking, setSellerId, resetDemo }}>{children}</Context.Provider>;
 }
 
 export function useApp() {

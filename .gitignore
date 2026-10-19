@@ -2,3 +2,8 @@ node_modules
 .next
 out
 .env*
+!.env.example
+tsconfig.tsbuildinfo
+.tmp-pg/
+.tmp-pg-server.log
+.qa-*.png
