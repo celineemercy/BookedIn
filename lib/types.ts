@@ -4,6 +4,23 @@ export type Service = { id: string; name: string; duration: number; price: numbe
 export type AvailabilitySlot = { date: string; time: string; available: boolean };
 export type DemoBookingStatus = "pending" | "accepted" | "declined" | "cancelled_by_customer" | "cancelled_by_seller" | "completed";
 export type DemoReview = { rating: number; body: string; createdAt: string };
+export type DemoCustomerProfile = {
+  preferredStyle: string;
+  allergies: string;
+  preferredStaff: string;
+  whatsappReminders: boolean;
+};
+export type DemoWaitlistEntry = {
+  id: string;
+  businessId: string;
+  serviceId: string;
+  customerName: string;
+  customerPhone: string;
+  preferredDate: string;
+  timeWindow: "morning" | "afternoon" | "evening";
+  createdAt: string;
+  status: "waiting" | "offered";
+};
 export type Business = {
   id: string;
   slug: string;
@@ -21,6 +38,11 @@ export type Business = {
   openingTime: string;
   closingTime: string;
   ownerCreated?: boolean;
+  guaranteeEnabled?: boolean;
+  instantConfirm?: boolean;
+  depositPercent?: number;
+  lastMinuteDiscount?: number;
+  proPlan?: boolean;
 };
 export type Booking = {
   id: string;
@@ -32,6 +54,11 @@ export type Booking = {
   time: string;
   createdAt: string;
   status: DemoBookingStatus;
+  source?: "marketplace" | "direct";
+  depositAmount?: number;
+  platformFee?: number;
+  discountPercent?: number;
+  preferredStaff?: string;
   cancellationReason?: string;
   review?: DemoReview;
 };

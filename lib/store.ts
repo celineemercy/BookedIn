@@ -1,9 +1,11 @@
 import { businesses } from "./data";
-import { Booking, Business } from "./types";
+import { Booking, Business, DemoCustomerProfile, DemoWaitlistEntry } from "./types";
 
 const BUSINESS_KEY = "temujasa-businesses-v1";
 const BOOKING_KEY = "temujasa-bookings-v1";
 const SELLER_KEY = "temujasa-seller-id-v1";
+const PROFILE_KEY = "temujasa-customer-profile-v1";
+const WAITLIST_KEY = "temujasa-waitlist-v1";
 
 function readList<T>(key: string): T[] {
   if (typeof window === "undefined") return [];
@@ -21,6 +23,26 @@ export const repository = {
   },
   getBookings: (): Booking[] => readList<Booking>(BOOKING_KEY).map(item => ({ ...item, status: item.status || "pending" })),
   getSellerId: (): string | null => typeof window === "undefined" ? null : localStorage.getItem(SELLER_KEY),
+  getCustomerProfile: (): DemoCustomerProfile => {
+    if (typeof window === "undefined") return { preferredStyle: "", allergies: "", preferredStaff: "", whatsappReminders: true };
+    try { return { preferredStyle: "", allergies: "", preferredStaff: "", whatsappReminders: true, ...JSON.parse(localStorage.getItem(PROFILE_KEY) || "{}") }; }
+    catch { return { preferredStyle: "", allergies: "", preferredStaff: "", whatsappReminders: true }; }
+  },
+  saveCustomerProfile: (profile: DemoCustomerProfile) => localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)),
+  getWaitlist: (): DemoWaitlistEntry[] => readList<DemoWaitlistEntry>(WAITLIST_KEY),
+  saveWaitlistEntry: (entry: DemoWaitlistEntry) => {
+    const entries = readList<DemoWaitlistEntry>(WAITLIST_KEY);
+    entries.push(entry);
+    localStorage.setItem(WAITLIST_KEY, JSON.stringify(entries));
+  },
+  updateWaitlistEntry: (id: string, changes: Partial<DemoWaitlistEntry>) => {
+    const entries = readList<DemoWaitlistEntry>(WAITLIST_KEY);
+    const index = entries.findIndex(item => item.id === id);
+    if (index < 0) return false;
+    entries[index] = { ...entries[index], ...changes };
+    localStorage.setItem(WAITLIST_KEY, JSON.stringify(entries));
+    return true;
+  },
   setSellerId: (id: string) => localStorage.setItem(SELLER_KEY, id),
   saveBusiness: (business: Business) => {
     const custom = readList<Business>(BUSINESS_KEY);
@@ -48,5 +70,7 @@ export const repository = {
     localStorage.removeItem(BUSINESS_KEY);
     localStorage.removeItem(BOOKING_KEY);
     localStorage.removeItem(SELLER_KEY);
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(WAITLIST_KEY);
   },
 };

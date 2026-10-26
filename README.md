@@ -2,6 +2,10 @@
 
 Next.js App Router, React, Tailwind CSS, Supabase, Mapbox, and Resend. The live catalog shows approved real businesses only. Fictional stores and browser-only booking remain under `/demo` and never enter live accounts.
 
+## Guest demo
+
+`/demo` is a browser-local product sandbox that works without registration. It connects the complete customer and seller lifecycle and includes BookedIn Guarantee deposits, last-minute Fill My Chair offers, Smart Waitlist matching, Beauty Passport preferences, one-tap rebooking, service reviews, and a seller revenue view. The simulated commercial model charges 5% only on the first completed marketplace booking from a new customer; direct and returning bookings show no marketplace fee. These values are product assumptions for validation, not live billing.
+
 ## Local development
 
 Use Node.js 24 for the built-in TypeScript test runner. Copy `.env.example` to `.env.local`, then fill the development Supabase project values.
