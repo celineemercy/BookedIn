@@ -2,6 +2,8 @@ export type Category = "Salon" | "Barbershop" | "Nail Studio" | "Spa";
 
 export type Service = { id: string; name: string; duration: number; price: number };
 export type AvailabilitySlot = { date: string; time: string; available: boolean };
+export type DemoBookingStatus = "pending" | "accepted" | "declined" | "cancelled_by_customer" | "cancelled_by_seller" | "completed";
+export type DemoReview = { rating: number; body: string; createdAt: string };
 export type Business = {
   id: string;
   slug: string;
@@ -29,4 +31,7 @@ export type Booking = {
   date: string;
   time: string;
   createdAt: string;
+  status: DemoBookingStatus;
+  cancellationReason?: string;
+  review?: DemoReview;
 };

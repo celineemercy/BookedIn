@@ -12,6 +12,7 @@ type AppState = {
   ready: boolean;
   saveBusiness: (business: Business) => void;
   addBooking: (booking: Booking) => boolean;
+  updateBooking: (id: string, changes: Partial<Booking>) => boolean;
   setSellerId: (id: string) => void;
   resetDemo: () => void;
 };
@@ -42,10 +43,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (success) setBookings(repository.getBookings());
     return success;
   };
+  const updateBooking = (id: string, changes: Partial<Booking>) => {
+    const success = repository.updateBooking(id, changes);
+    if (success) setBookings(repository.getBookings());
+    return success;
+  };
   const setSellerId = (id: string) => { repository.setSellerId(id); setSeller(id); };
   const resetDemo = () => { repository.resetDemo(); setBusinesses(seedBusinesses); setBookings([]); setSeller(null); };
 
-  return <Context.Provider value={{ businesses, bookings, sellerId, ready, saveBusiness, addBooking, setSellerId, resetDemo }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ businesses, bookings, sellerId, ready, saveBusiness, addBooking, updateBooking, setSellerId, resetDemo }}>{children}</Context.Provider>;
 }
 
 export function useApp() {

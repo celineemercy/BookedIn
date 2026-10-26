@@ -19,7 +19,7 @@ export const repository = {
     const savedIds = new Set(saved.map(item => item.id));
     return [...businesses.filter(item => !savedIds.has(item.id)), ...saved];
   },
-  getBookings: (): Booking[] => readList<Booking>(BOOKING_KEY),
+  getBookings: (): Booking[] => readList<Booking>(BOOKING_KEY).map(item => ({ ...item, status: item.status || "pending" })),
   getSellerId: (): string | null => typeof window === "undefined" ? null : localStorage.getItem(SELLER_KEY),
   setSellerId: (id: string) => localStorage.setItem(SELLER_KEY, id),
   saveBusiness: (business: Business) => {
@@ -33,6 +33,14 @@ export const repository = {
     const bookings = readList<Booking>(BOOKING_KEY);
     if (bookings.some(item => item.businessId === booking.businessId && item.date === booking.date && item.time === booking.time)) return false;
     bookings.push(booking);
+    localStorage.setItem(BOOKING_KEY, JSON.stringify(bookings));
+    return true;
+  },
+  updateBooking: (id: string, changes: Partial<Booking>) => {
+    const bookings = readList<Booking>(BOOKING_KEY);
+    const index = bookings.findIndex(item => item.id === id);
+    if (index < 0) return false;
+    bookings[index] = { ...bookings[index], ...changes };
     localStorage.setItem(BOOKING_KEY, JSON.stringify(bookings));
     return true;
   },
