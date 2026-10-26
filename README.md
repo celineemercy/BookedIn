@@ -17,6 +17,31 @@ npm run dev
 
 Without Supabase credentials, the design and `/demo` work, but live catalog, login, and account flows have no data. Without a Mapbox token, sellers can enter exact coordinates manually. Keep the service role key, Resend key, and cron secret server-side; never prefix them with `NEXT_PUBLIC_`.
 
+## Docker
+
+Build and run the production image with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The app is available at `http://localhost:3000`; the container health check uses `/api/health`. Compose reads values from the local `.env` file. Only `NEXT_PUBLIC_*` values are passed during the image build; service-role, email, and cron secrets are injected at runtime and are not stored in the image layers.
+
+To use another host port:
+
+```bash
+PORT=8080 docker compose up --build
+```
+
+In PowerShell, use `$env:PORT=8080; docker compose up --build` instead.
+
+Build without Compose by passing any required public configuration as build arguments, then inject private configuration when the container starts:
+
+```bash
+docker build -t bookedin --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3000 .
+docker run --rm -p 3000:3000 --env-file .env bookedin
+```
+
 ## Supabase setup
 
 1. Create **two separate Supabase projects**: one for the `dev` preview branch and one for `main` production. Use separate keys, data, Auth users, Storage, and email settings.
