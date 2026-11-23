@@ -1,6 +1,6 @@
 # BookedIn
 
-Next.js App Router, React, Tailwind CSS, Supabase, Mapbox, and Resend. The live catalog shows approved real businesses only. Fictional stores and browser-only booking remain under `/demo` and never enter live accounts.
+Next.js App Router, React, Tailwind CSS, Supabase, Mapbox, and Resend. The live catalog shows approved real businesses only.
 
 ## Local development
 
@@ -11,12 +11,37 @@ npm install
 npm run dev
 ```
 
-Without Supabase credentials, the design and `/demo` work, but live catalog, login, and account flows have no data. Without a Mapbox token, sellers can enter exact coordinates manually. Keep the service role key, Resend key, and cron secret server-side; never prefix them with `NEXT_PUBLIC_`.
+Without Supabase credentials, the live catalog, login, and account flows have no data. Without a Mapbox token, sellers can enter exact coordinates manually. Keep the service role key, Resend key, and cron secret server-side; never prefix them with `NEXT_PUBLIC_`.
+
+## Docker
+
+Build and run the production image with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The app is available at `http://localhost:3000`; the container health check uses `/api/health`. Compose reads values from the local `.env` file. Only `NEXT_PUBLIC_*` values are passed during the image build; service-role, email, and cron secrets are injected at runtime and are not stored in the image layers.
+
+To use another host port:
+
+```bash
+PORT=8080 docker compose up --build
+```
+
+In PowerShell, use `$env:PORT=8080; docker compose up --build` instead.
+
+Build without Compose by passing any required public configuration as build arguments, then inject private configuration when the container starts:
+
+```bash
+docker build -t bookedin --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3000 .
+docker run --rm -p 3000:3000 --env-file .env bookedin
+```
 
 ## Supabase setup
 
 1. Create **two separate Supabase projects**: one for the `dev` preview branch and one for `main` production. Use separate keys, data, Auth users, Storage, and email settings.
-2. Apply `supabase/migrations/202610170001_marketplace.sql` through `202610170006_schedule_guards.sql` in order to each project. Review every migration before running it. The first migration creates RLS policies, Storage bucket, booking exclusion constraint, and service snapshots. The booking launch gate leaves booking **closed** at the database level; the final migration prevents calendar edits from invalidating active bookings.
+2. Apply `supabase/migrations/202610170001_marketplace.sql` through `202610170007_one_business_per_owner.sql` in order to each project. Review every migration before running it. The first migration creates RLS policies, Storage bucket, booking exclusion constraint, and service snapshots. The booking launch gate leaves booking **closed** at the database level; later migrations prevent calendar edits from invalidating active bookings and limit each seller account to one business. The final migration stops if existing data has multiple businesses for one owner; consolidate those records before applying it.
 3. In Supabase Auth, configure email magic links and the exact site URL. Add redirect URLs for `https://YOUR_DOMAIN/auth/callback` and the preview domain. Configure [custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp) with a verified Resend sending domain for production; Supabase's default email is not suitable for public launch.
 4. Sign in once with the operator email, then grant admin status in the Supabase SQL editor using the exact verified email:
 

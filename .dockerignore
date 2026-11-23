@@ -1,0 +1,14 @@
+.git
+.gitignore
+.next
+node_modules
+npm-debug.log*
+.env*
+!.env.example
+.tmp-pg
+.tmp-pg-server.log
+.qa-*.png
+coverage
+out
+tsconfig.tsbuildinfo
+README.md
