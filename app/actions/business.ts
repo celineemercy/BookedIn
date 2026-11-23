@@ -30,13 +30,23 @@ export async function saveBusinessBasics(input: z.infer<typeof basicsSchema>): P
       revalidatePath("/seller/dashboard"); revalidatePath("/explore");
       return { ok: true, id: value.businessId };
     }
+    const { data: existingBusiness, error: existingBusinessError } = await admin
+      .from("businesses")
+      .select("id")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (existingBusinessError) throw existingBusinessError;
+    if (existingBusiness) return { ok: false, error: "Satu akun hanya dapat mengelola satu toko." };
     const suffix = crypto.randomUUID().slice(0, 8);
     const slug = `${value.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${suffix}`;
     const { data, error } = await admin.from("businesses").insert({
       owner_id: user.id, slug, name: value.name, category: value.category, area: value.area,
       address: value.address, description: value.description, contact_phone: value.contactPhone, lat: value.lat, lng: value.lng,
     }).select("id").single();
-    if (error || !data) throw error || new Error("Toko gagal dibuat.");
+    if (error || !data) {
+      if (error?.code === "23505") return { ok: false, error: "Satu akun hanya dapat mengelola satu toko." };
+      throw error || new Error("Toko gagal dibuat.");
+    }
     const hours = Array.from({ length: 7 }, (_, day) => ({ business_id: data.id, day_of_week: day, opens_at: day === 0 ? null : "09:00", closes_at: day === 0 ? null : "18:00" }));
     await admin.from("weekly_hours").insert(hours);
     revalidatePath("/seller/dashboard");

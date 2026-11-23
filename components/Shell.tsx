@@ -18,7 +18,6 @@ export function Header({ signedIn }: { signedIn: boolean }) {
   const links = [
     { href: "/explore", label: "Jelajahi tempat" },
     { href: "/seller/dashboard", label: "Untuk pemilik usaha" },
-    { href: "/demo", label: "Lihat demo" },
   ];
   const account = { href: signedIn ? "/account" : "/login", label: signedIn ? "Akun saya" : "Masuk" };
   return <header className="sticky top-0 z-50 border-b border-[#E9E4DE] bg-paper/95 backdrop-blur">
@@ -34,7 +33,7 @@ export function Header({ signedIn }: { signedIn: boolean }) {
 export function Footer() {
   return <footer className="mt-20 border-t border-[#EBDCD3] bg-[#FFF5EC]"><div className="container-page grid gap-9 py-12 md:grid-cols-[1.5fr_1fr_1fr]">
     <div><Logo /><p className="mt-4 max-w-sm text-sm leading-7 text-muted">Cari layanan yang pas, pilih waktunya, dan tunggu konfirmasi dari tempat usaha.</p></div>
-    <div><p className="mb-4 font-bold">Jelajahi</p><div className="flex flex-col gap-3 text-sm text-muted"><Link href="/explore">Semua tempat</Link><Link href="/explore?category=Salon">Salon</Link><Link href="/explore?category=Barbershop">Barbershop</Link><Link href="/demo">Demo prototipe</Link></div></div>
+    <div><p className="mb-4 font-bold">Jelajahi</p><div className="flex flex-col gap-3 text-sm text-muted"><Link href="/explore">Semua tempat</Link><Link href="/explore?category=Salon">Salon</Link><Link href="/explore?category=Barbershop">Barbershop</Link></div></div>
     <div><p className="mb-4 font-bold">BookedIn</p><div className="flex flex-col gap-3 text-sm text-muted"><Link href="/seller/start">Daftarkan usaha</Link><Link href="/seller/dashboard">Dashboard pemilik</Link><Link href="/privacy">Privasi</Link></div></div>
   </div><div className="container-page border-t border-[#E8D8CF] py-5 text-xs text-muted">© {new Date().getFullYear()} BookedIn · Jakarta</div></footer>;
 }
