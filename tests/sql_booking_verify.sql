@@ -3,12 +3,22 @@ grant usage on schema auth to authenticated;
 
 insert into auth.users(id, email) values
   ('11111111-1111-4111-8111-111111111111', 'customer@example.com'),
-  ('22222222-2222-4222-8222-222222222222', 'seller@example.com');
+  ('22222222-2222-4222-8222-222222222222', 'seller@example.com'),
+  ('33333333-3333-4333-8333-333333333333', 'second-seller@example.com');
 
 insert into public.businesses(id, owner_id, slug, name, category, area, address, description, lat, lng, status)
 values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '22222222-2222-4222-8222-222222222222', 'live-shop', 'Live Shop', 'Salon', 'Jakarta Selatan', 'Test Street 1', 'A real test shop', -6.2, 106.8, 'published'),
-  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '22222222-2222-4222-8222-222222222222', 'draft-shop', 'Draft Shop', 'Salon', 'Jakarta Selatan', 'Test Street 2', 'A draft test shop', -6.2, 106.8, 'draft');
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '33333333-3333-4333-8333-333333333333', 'draft-shop', 'Draft Shop', 'Salon', 'Jakarta Selatan', 'Test Street 2', 'A draft test shop', -6.2, 106.8, 'draft');
+
+do $$ begin
+  begin
+    insert into public.businesses(owner_id, slug, name, category, area, address, description, lat, lng)
+    values ('22222222-2222-4222-8222-222222222222', 'second-live-shop', 'Second Live Shop', 'Salon', 'Jakarta Selatan', 'Test Street 3', 'A second shop for the same owner', -6.2, 106.8);
+    raise exception 'Second business for the same owner was accepted';
+  exception when unique_violation then null;
+  end;
+end $$;
 
 insert into public.services(id, business_id, name, duration_minutes, price_idr) values
   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Haircut', 60, 100000),
@@ -63,6 +73,6 @@ end $$;
 
 set request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
 do $$ begin
-  if (select count(*) from public.businesses) <> 2 then raise exception 'Seller cannot see own draft'; end if;
+  if (select count(*) from public.businesses) <> 1 then raise exception 'Seller can see another owner business'; end if;
   if (select count(*) from public.bookings) <> 1 then raise exception 'Seller cannot see own booking'; end if;
 end $$;

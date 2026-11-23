@@ -5,7 +5,6 @@ import "@fontsource/plus-jakarta-sans/600.css";
 import "@fontsource/plus-jakarta-sans/700.css";
 import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
-import { AppProvider } from "@/components/AppProvider";
 import { Header, Footer } from "@/components/Shell";
 import { getCurrentUser } from "@/lib/live-data";
 
@@ -16,5 +15,5 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const user = await getCurrentUser();
-  return <html lang="id"><body className="font-sans text-ink"><AppProvider><Header signedIn={!!user} />{children}<Footer /></AppProvider></body></html>;
+  return <html lang="id"><body className="font-sans text-ink"><Header signedIn={!!user} />{children}<Footer /></body></html>;
 }
